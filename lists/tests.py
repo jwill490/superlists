@@ -7,6 +7,23 @@ from django.template.loader import render_to_string
 from lists.views import home_page
 from lists.models import Item
 # Create your tests here.
+
+class NewListTest(TestCase):
+
+    def test_saving_a_POST_request(self):
+       self.client.post('/lists/new',
+        data={'item_text': 'A new list item'}
+        )
+       self.assertEqual(Item.objects.count(), 1)
+       new_item = Item.objects.first()
+       self.assertEqual(new_item.text, 'A new list item')
+
+    def test_redirects_after_POST(self):
+       response = self.client.post('/lists/new',
+        data={'item_text': 'A new list item'}
+        )
+       self.assertRedirects(response, '/lists/the-only-list-in-the-world/')
+
 class HomePageTest(TestCase):
 
     def test_root_url_resolves_to_home_page_view(self):
@@ -18,48 +35,6 @@ class HomePageTest(TestCase):
         response = home_page(request) # We pass it to our home_page view, which gives us a response. You won't be surprised to hear that this object is an instance of a class called HttpResponse. Then, we assert that the .content of the response, which is the HTML that we send to the user-- has certain properties.
         expected_html = render_to_string('home.html')
         self.assertEqual(response.content.decode(), expected_html)
-
-    def test_home_page_can_save_a_POST_request(self):
-        request = HttpRequest()
-        request.method = 'POST'
-        request.POST['item_text'] = 'A new list item'
-        response = home_page(request)
-        #We check thato ne new Item has been saved to the database. objects.count()
-        #is a shorthand for objects.all().count()
-        self.assertEqual(Item.objects.count(), 1)
-        # objects.first() is the same as doing objects.all()[0]
-        new_item = Item.objects.first()
-        #We check that the item's text is correct
-        self.assertEqual(new_item.text, 'A new list item')
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['location'], '/')
-
-    def test_home_page_redirects_after_POST(self):
-        request = HttpRequest()
-        request.method = 'POST'
-        request.POST['item_text'] = 'A new list item'
-
-        response = home_page(request)
-
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['location'], '/')
-
-    def test_home_page_only_saves_items_when_necessary(self):
-        request = HttpRequest()
-        home_page(request)
-        self.assertEqual(Item.objects.count(), 0)
-
-    def test_home_page_displays_all_list_items(self):
-        Item.objects.create(text='itemey 1')
-        Item.objects.create(text='itemey 2')
-
-        request = HttpRequest()
-        response = home_page(request)
-
-        self.assertIn('itemey 1', response.content.decode())
-        self.assertIn('itemey 2', response.content.decode())
-    
-
 
 class ItemModelTest(TestCase):
 
@@ -79,4 +54,18 @@ class ItemModelTest(TestCase):
         second_saved_item = saved_items[1]
         self.assertEqual(first_saved_item.text, 'The first (ever) list item')
         self.assertEqual(second_saved_item.text, 'Item the second')
+
+class ListViewTest(TestCase):
+
+    def test_uses_list_template(self):
+        response = self.client.get('/lists/the-only-list-in-the-world/')
+        self.assertTemplateUsed(response, 'list.html')
+
+    def test_displays_all_list_items(self):
+        Item.objects.create(text='itemey 1')
+        Item.objects.create(text='itemey 2')
+        response = self.client.get('/lists/the-only-list-in-the-world/')
+        self.assertContains(response, 'itemey 1')
+        self.assertContains(response, 'itemey 2')
+
 
