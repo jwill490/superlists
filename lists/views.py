@@ -17,10 +17,9 @@ def view_list(request, list_id):
 
 def new_list(request):
 	list_ = List.objects.create()
-	Item.objects.create(text=request.POST['item_text'], 
-		list=list_)
+	Item.objects.create(text=request.POST['item_text'], list=list_)
 	return redirect('/lists/%d/' % (list_.id,))
-	
+
 	''' Old request method
 	item = Item()
 	item.text = request.POST.get('item_text', '')
