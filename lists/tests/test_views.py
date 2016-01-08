@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.utils.html import escape
+from lists.forms import ItemForm
 
 
 from lists.views import home_page
@@ -39,7 +40,9 @@ class NewListTest(TestCase):
         self.assertEqual(Item.objects.count(), 0)
 
 class HomePageTest(TestCase):
-
+    #...so that's why we also need to set maxDiff = None on the test class
+    '''Old tests before inserting forms
+    maxDiff = None
     def test_root_url_resolves_to_home_page_view(self):
         found = resolve('/')
         self.assertEqual(found.func, home_page)
@@ -47,9 +50,23 @@ class HomePageTest(TestCase):
     def test_home_page_returns_correct_html(self):
         request = HttpRequest() # Create an HttpRequest object, which is what Django will see when a user's browser asks for a page
         response = home_page(request) # We pass it to our home_page view, which gives us a response. You won't be surprised to hear that this object is an instance of a class called HttpResponse. Then, we assert that the .content of the response, which is the HTML that we send to the user-- has certain properties.
-        expected_html = render_to_string('home.html')
-        self.assertEqual(response.content.decode(), expected_html)
+        expected_html = render_to_string('home.html', {'form': ItemForm()})
+        # assertMultiLineEqual is useful for comparing long strings; it gives you a diff-style
+        # output, but it truncates long diffs by default...        
+        self.assertMultiLineEqual(response.content.decode(), expected_html)
+        #self.assertEqual(response.content.decode(), expected_html)'''
 
+    def test_home_page_renders_home_template(self):
+        response = self.client.get('/')
+        # We'll use the helper method assertTemplateUsed to replace our 
+        # old manual test of the template
+        self.assertTemplateUsed(response, 'home.html')
+
+    def test_home_page_uses_item_form(self):
+        response = self.client.get('/')
+        # We use assertIsInstance to check that our view uses the right
+        # kind of form
+        self.assertIsInstance(response.context['form'], ItemForm)#2
 class ListViewTest(TestCase):
 
     def test_passes_correct_list_to_template(self):
