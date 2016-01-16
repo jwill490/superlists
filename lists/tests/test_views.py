@@ -4,6 +4,7 @@ from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.utils.html import escape
 from lists.forms import ItemForm, EMPTY_ITEM_ERROR
+from unittest import skip
 
 
 from lists.views import home_page
@@ -170,7 +171,20 @@ class ListViewTest(TestCase):
     def test_for_invalid_input_shows_error_on_page(self):
         response = self.post_invalid_input()
         self.assertContains(response, escape(EMPTY_ITEM_ERROR))
-
         #By making a little helper function, post_invalid_input, we can make four seperate tests
         #without duplicationg lots of lines of code
+    @skip
+    def test_duplicate_item_validation_errors_end_up_on_lists_page(self):
+        list1 = List.objects.create()
+        item1 = Item.objects.create(list=list1, text='textey')
+        response = self.client.post(
+            '/lists/%d/' % (list1.id,),
+            data={'text': 'textey'}
+        )
+
+        expected_error = escape("You've already got this in your list")
+        self.assertContains(response, expected_error)
+        self.assertTemplateUsed(response, 'list.html')
+        self.assertEqual(Item.objects.all().count(), 1)
+
 

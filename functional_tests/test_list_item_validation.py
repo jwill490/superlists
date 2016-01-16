@@ -37,4 +37,4 @@ class ItemValidationTest(FunctionalTest):
 		self.check_for_row_in_list_table('1: Buy milk')
 		self.check_for_row_in_list_table('2: Make tea')
 
-		#Checks to see if it's been executed from the commandl ine
+
